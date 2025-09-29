@@ -198,11 +198,10 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div>
-          {/* If at /admin (overview), render overview, else render nested route */}
+          {/* If at /admin (overview), render overview; otherwise render nested route via Outlet
+             This ensures nested routes like /admin/users/:id are shown instead of being overridden */}
           {location.pathname === "/admin" || location.pathname === "/admin/" ? (
             renderOverview()
-          ) : location.pathname.startsWith("/admin/users") ? (
-            renderUsers()
           ) : (
             <Outlet />
           )}

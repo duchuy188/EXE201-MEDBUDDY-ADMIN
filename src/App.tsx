@@ -15,6 +15,8 @@ import Login from "./pages/Login";
 import RequireAuth from "./components/RequireAuth";
 import AdminProfile from "./pages/AdminProfile";
 import PacketManagement from "./pages/PacketManager/PacketManagement";
+import ViewUser from "./pages/UserManager/ViewUser";
+import EditUser from "./pages/UserManager/EditUser";
 
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
         }>
           <Route index element={<div>{/* Overview tab */}{/* Rendered in AdminDashboard */}</div>} />
           <Route path="users" element={<UsersManagement />} />
+          <Route path="users/:id" element={<ViewUser />} />
+          <Route path="users/:id/edit" element={<EditUser />} />
           <Route path="medicines" element={<MedicinesPage />} />
           <Route path="packets" element={<PacketManagement />} />
           <Route path="settings" element={<SettingsPage />} />

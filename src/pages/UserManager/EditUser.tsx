@@ -18,9 +18,25 @@ const EditUser: React.FC<{ onUpdated?: () => void }> = ({ onUpdated }) => {
       try {
         const resp = await userServices.getUser(id);
         const data = resp?.data ?? resp;
-        const u = data?.data ?? data ?? {};
+        // Support { data: {...} }, { user: {...} }, or direct object
+        const u = data?.data ?? data?.user ?? data ?? {};
         if (!mounted) return;
-        setForm({ fullName: u.fullName || u.name, email: u.email, phoneNumber: u.phoneNumber, role: u.role || 'relative', dateOfBirth: u.dateOfBirth || '' });
+        // Format dateOfBirth to yyyy-MM-dd for input type=date
+        let dob = u.dateOfBirth || '';
+        if (dob) {
+          const d = new Date(dob);
+          if (!isNaN(d.getTime())) {
+            dob = d.toISOString().slice(0, 10);
+          }
+        }
+        setForm({
+          fullName: u.fullName || u.name || '',
+          email: u.email || '',
+          phoneNumber: u.phoneNumber || '',
+          role: u.role || 'relative',
+          dateOfBirth: dob,
+          isBlocked: typeof u.isBlocked === 'boolean' ? u.isBlocked : false
+        });
       } catch (e: any) {
         toast.error(e?.response?.data?.message || e?.message || 'Không tải được người dùng');
       }

@@ -91,7 +91,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     init();
-    return () => { mounted = false; };
+
+    // Đặt interval tự động refresh token mỗi 50 phút (3000000 ms)
+    const interval = setInterval(() => {
+      refresh();
+    }, 50 * 60 * 1000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

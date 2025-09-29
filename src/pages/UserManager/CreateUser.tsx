@@ -22,31 +22,30 @@ const CreateUser: React.FC<{ onCreated?: () => void }> = ({ onCreated }) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Tạo người dùng</CardTitle>
-        <CardDescription>Thêm người dùng mới vào hệ thống</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input placeholder="Họ và tên" value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Số điện thoại" value={form.phoneNumber} onChange={e => setForm({ ...form, phoneNumber: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Mật khẩu" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="border rounded px-3 py-2" />
-          <input placeholder="Ngày sinh" type="date" value={form.dateOfBirth} onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} className="border rounded px-3 py-2" />
-          <label className="sr-only" htmlFor="create-role">Vai trò</label>
-          <select id="create-role" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="border rounded px-3 py-2">
-            <option value="relative">Người thân</option>
-            <option value="patient">Người bệnh</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-
-        <div className="mt-4 flex space-x-2">
-          <Button onClick={handleCreate} disabled={loading}>{loading ? 'Đang tạo...' : 'Tạo'}</Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-fadeIn relative">
+      <button type="button" aria-label="Đóng" onClick={onCreated} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl font-bold">×</button>
+      <h2 className="text-lg font-semibold mb-4 text-gray-900">Tạo người dùng</h2>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={e => { e.preventDefault(); handleCreate(); }}
+        autoComplete="off"
+      >
+        <input value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} className="border border-gray-200 bg-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition w-full" placeholder="Họ và tên" required />
+        <input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="border border-gray-200 bg-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition w-full" placeholder="Email" type="email" required />
+        <input value={form.phoneNumber} onChange={e => setForm({ ...form, phoneNumber: e.target.value })} className="border border-gray-200 bg-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition w-full" placeholder="Số điện thoại" />
+        <input value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="border border-gray-200 bg-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition w-full" placeholder="Mật khẩu" type="password" required />
+        <input value={form.dateOfBirth} onChange={e => setForm({ ...form, dateOfBirth: e.target.value })} className="border border-gray-200 bg-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition w-full" placeholder="Ngày sinh" type="date" />
+        <label htmlFor="role" className="sr-only">Vai trò</label>
+        <select id="role" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="border border-gray-200 bg-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none transition w-full">
+          <option value="relative">Người thân</option>
+          <option value="patient">Người bệnh</option>
+          <option value="admin">Admin</option>
+        </select>
+        <Button type="submit" className="w-full mt-2 py-2 text-base font-semibold bg-indigo-700 text-white rounded shadow hover:bg-indigo-800 transition" disabled={loading}>
+          {loading ? 'Đang tạo...' : 'Tạo'}
+        </Button>
+      </form>
+    </div>
   );
 };
 

@@ -1,3 +1,4 @@
+import { User } from "@/types/auth";
 import axiosInstance from "../config/axiosInstance";
 
 export const userServices = {
@@ -47,7 +48,7 @@ export const userServices = {
   },
 
   // update
-  updateUser: (id: string, body: any) => {
+  updateUser: (id: string, body: User) => {
     return axiosInstance.put(`/admin/users/${id}`, body);
   },
 

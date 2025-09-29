@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { userServices } from '@/services/usersService';
 import { toast } from 'sonner';
+import { TbLock, TbLockOpen2 } from 'react-icons/tb';
 
 const BlockUser: React.FC<{ userId: string; onDone?: () => void }> = ({ userId, onDone }) => {
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,7 @@ const BlockUser: React.FC<{ userId: string; onDone?: () => void }> = ({ userId, 
   const handleBlock = async () => {
     setLoading(true);
     try {
-      await userServices.changeUserStatus(userId, { status: 'blocked' });
+      await userServices.blockUser(userId);
       toast.success('Người dùng đã bị khóa');
       onDone?.();
     } catch (e: any) {
@@ -23,7 +23,7 @@ const BlockUser: React.FC<{ userId: string; onDone?: () => void }> = ({ userId, 
   const handleUnblock = async () => {
     setLoading(true);
     try {
-      await userServices.changeUserStatus(userId, { status: 'active' });
+      await userServices.unblockUser(userId);
       toast.success('Mở khóa người dùng thành công');
       onDone?.();
     } catch (e: any) {
@@ -34,18 +34,20 @@ const BlockUser: React.FC<{ userId: string; onDone?: () => void }> = ({ userId, 
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quản lý khóa người dùng</CardTitle>
-        <CardDescription>Khóa hoặc mở khóa tài khoản người dùng</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex space-x-2">
-          <Button variant="outline" className="text-red-600" onClick={handleBlock} disabled={loading}>Khóa</Button>
-          <Button variant="outline" onClick={handleUnblock} disabled={loading}>Mở khóa</Button>
+    <div className="rounded-2xl shadow-xl p-4 bg-white w-full max-w-[320px] flex flex-col items-center">
+      <div className="flex flex-col items-center mb-2">
+        <div className="bg-yellow-100 rounded-full p-1 mb-1 flex gap-1">
+          <TbLock className="text-yellow-500 w-6 h-6" />
+          <TbLockOpen2 className="text-yellow-500 w-6 h-6" />
         </div>
-      </CardContent>
-    </Card>
+        <div className="font-semibold text-base text-center">Bạn có chắc muốn khóa hoặc mở khóa?</div>
+        <div className="text-xs text-muted-foreground text-center mt-1 mb-2">Thao tác này sẽ ảnh hưởng đến quyền truy cập của người dùng.</div>
+      </div>
+      <div className="flex w-full gap-2 justify-center mt-1">
+        <Button className="flex-1 text-red-600 border border-red-200 hover:bg-red-50" style={{fontWeight:500}} variant="outline" onClick={handleBlock} disabled={loading}>Khóa</Button>
+        <Button className="flex-1" variant="outline" onClick={handleUnblock} disabled={loading}>Mở khóa</Button>
+      </div>
+    </div>
   );
 };
 
