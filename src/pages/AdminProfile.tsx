@@ -119,7 +119,7 @@ const AdminProfile: React.FC = () => {
                       {!editing ? (
                         <div className="mt-1 text-lg">{profile?.email || '—'}</div>
                       ) : (
-                        <input aria-label="Email" placeholder="example@domain.com" type="email" className="mt-1 w-full border rounded px-3 py-2" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                        <input aria-label="Email" placeholder="example@domain.com" type="email" className="mt-1 w-full border rounded px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed" value={form.email || ''} readOnly />
                       )}
                     </div>
                     <div>

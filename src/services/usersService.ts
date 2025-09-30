@@ -55,7 +55,7 @@ export const userServices = {
   },
 
   // update
-  updateUser: (id: string, body: User) => {
+  updateUser: (id: string, body: Partial<User>) => {
     return axiosInstance.put(`/admin/users/${id}`, body);
   },
 
