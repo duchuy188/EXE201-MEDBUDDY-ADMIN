@@ -1,6 +1,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import AdminDashboard from "./pages/AdminDashboard";
 import UsersManagement from "./pages/UserManager/UsersManagement";
 // Dummy Medicines and Settings pages
@@ -51,6 +53,19 @@ const App = () => (
         } />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover={false}
+        theme="light"
+        limit={3}
+      />
     </BrowserRouter>
   </QueryClientProvider>
 );

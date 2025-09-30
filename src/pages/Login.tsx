@@ -4,20 +4,23 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import Spinner from '@/components/Spinner';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { validateLogin } from '@/utils/validate';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Vui lòng nhập đầy đủ thông tin');
+    const v = validateLogin(email, password);
+    if (v) {
+      setError(v);
       return;
     }
     setError('');
@@ -108,13 +111,33 @@ const Login: React.FC = () => {
                     </svg>
                   </div>
                   <input
-                    type="password"
-                    className="w-full pl-10 pr-4 py-3 border border-senior-soft rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-senior-accent focus:border-transparent transition-all duration-200 placeholder-senior-steel/60"
+                    type={showPassword ? 'text' : 'password'}
+                    className="w-full pl-10 pr-10 py-3 border border-senior-soft rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-senior-accent focus:border-transparent transition-all duration-200 placeholder-senior-steel/60"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
+                    aria-describedby="toggle-password"
                   />
+                  <button
+                    type="button"
+                    id="toggle-password"
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                    onClick={() => setShowPassword(s => !s)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-senior-steel"
+                  >
+                    {showPassword ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9-3.5-10-8 1-4.5 5-8 10-8 1 0 1.95.2 2.85.56M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </div>
 

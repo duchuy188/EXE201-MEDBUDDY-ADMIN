@@ -1,5 +1,6 @@
 import { User } from "@/types/auth";
 import axiosInstance from "../config/axiosInstance";
+import axios from 'axios';
 
 export const userServices = {
   // auth
@@ -10,7 +11,13 @@ export const userServices = {
     return axiosInstance.post('/auth/logout');
   },
   refreshToken: () => {
-    return axiosInstance.post('/auth/refresh-token');
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    // use a plain axios instance to avoid interceptor recursion
+    const raw = axios.create({ baseURL: import.meta.env.VITE_REACT_APP_BASE_URL, withCredentials: true });
+    return raw.post('/auth/refresh-token', { refreshToken });
   },
 
   // profile
@@ -48,7 +55,7 @@ export const userServices = {
   },
 
   // update
-  updateUser: (id: string, body: User) => {
+  updateUser: (id: string, body: Partial<User>) => {
     return axiosInstance.put(`/admin/users/${id}`, body);
   },
 
@@ -60,5 +67,4 @@ export const userServices = {
   unblockUser: (id: string) => {
     return axiosInstance.patch(`/admin/users/${id}/unblock`);
   },
-
 };
