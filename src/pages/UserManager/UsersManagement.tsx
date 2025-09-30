@@ -1,14 +1,78 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { userServices } from '@/services/usersService';
 import { useNavigate } from 'react-router-dom';
 import { UserWithoutPassword } from '@/types/auth';
-import BlockUser from './BlockUser';
 import CreateUser from './CreateUser';
-import { TbLock, TbLockOpen2 } from 'react-icons/tb';
+import { TbLock, TbLockOpen2, TbEye, TbEdit } from 'react-icons/tb';
 import { FiFilter } from 'react-icons/fi';
+import { toast } from 'sonner';
+import useLazyLoading from '@/hooks/useLazyLoading';
+import LoadingIndicator from '@/components/LoadingIndicator';
+
+// Lazy load CreateUser component
+const LazyCreateUser = lazy(() => import('./CreateUser'));
+
+const ConfirmDialogComponent: React.FC<{
+  message: string;
+  targetElement: HTMLElement;
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ message, targetElement, onConfirm, onCancel }) => {
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const updatePosition = () => {
+      if (targetElement) {
+        const rect = targetElement.getBoundingClientRect();
+        setPosition({
+          top: rect.top - 80,
+          left: rect.left - 150
+        });
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('scroll', updatePosition);
+    window.addEventListener('resize', updatePosition);
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [targetElement]);
+
+  return (
+    <div
+      className="fixed z-50 bg-white rounded-lg shadow-lg border p-3 w-64"
+      style={{
+        top: `${position.top}px`,
+        left: `${position.left}px`
+      }}
+    >
+      <div className="text-sm mb-2">{message}</div>
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs"
+          onClick={onCancel}
+        >
+          Hủy
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white"
+          onClick={onConfirm}
+        >
+          Xác nhận
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const QuanLyNguoiDung: React.FC = () => {
   const [users, setUsers] = useState<UserWithoutPassword[]>([]);
@@ -19,18 +83,44 @@ const QuanLyNguoiDung: React.FC = () => {
   const [limit, setLimit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  const [blockUserId, setBlockUserId] = useState<string | null>(null);
+  const { isRefreshing, refreshWithDelay } = useLazyLoading();
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+    targetElement: HTMLElement | null;
+  }>({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null });
   const [showCreate, setShowCreate] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>('all');
+
+  // Function to reload table data only
+  const reloadTableData = async () => {
+    try {
+      const params: any = { page, limit };
+      if (roleFilter && roleFilter !== 'all') params.role = roleFilter;
+      const resp = await userServices.getAllUsers(params);
+      const data = resp?.data ?? resp;
+      const list = data?.data ?? data?.users ?? (Array.isArray(data) ? data : undefined) ?? [];
+      const pagination = data?.pagination ?? data?.meta ?? undefined;
+      setUsers(Array.isArray(list) ? list : []);
+      if (pagination) {
+        setTotalPages(pagination.totalPages ?? pagination.total_pages ?? 1);
+        setTotalUsers(pagination.totalUsers ?? pagination.total_users ?? pagination.total ?? 0);
+      }
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Không tải được người dùng');
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
       try {
-  const params: any = { page, limit };
-  if (roleFilter && roleFilter !== 'all') params.role = roleFilter;
-  const resp = await userServices.getAllUsers(params);
+        const params: any = { page, limit };
+        if (roleFilter && roleFilter !== 'all') params.role = roleFilter;
+        const resp = await userServices.getAllUsers(params);
         const data = resp?.data ?? resp;
         const list = data?.data ?? data?.users ?? (Array.isArray(data) ? data : undefined) ?? [];
         const pagination = data?.pagination ?? data?.meta ?? undefined;
@@ -51,6 +141,42 @@ const QuanLyNguoiDung: React.FC = () => {
   }, [page, limit, roleFilter]);
 
   const navigate = useNavigate();
+
+  const handleBlockUser = async (userId: string, isCurrentlyBlocked: boolean, event: React.MouseEvent) => {
+    const action = isCurrentlyBlocked ? 'mở khóa' : 'khóa';
+    const message = isCurrentlyBlocked
+      ? 'Bạn có chắc chắn muốn mở khóa người dùng này không?'
+      : 'Bạn có chắc chắn muốn khóa người dùng này không?';
+
+    const tableCell = (event.currentTarget as HTMLElement).closest('td');
+
+    setConfirmDialog({
+      isOpen: true,
+      message,
+      targetElement: tableCell as HTMLElement,
+      onConfirm: async () => {
+        setConfirmDialog({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null });
+
+        setActionLoading(userId);
+        try {
+          if (isCurrentlyBlocked) {
+            await userServices.unblockUser(userId);
+            toast.success('Mở khóa người dùng thành công');
+          } else {
+            await userServices.blockUser(userId);
+            toast.success('Người dùng đã bị khóa');
+          }
+          // Reload only table data, not the entire page
+          await reloadTableData();
+          await refreshWithDelay(300);
+        } catch (e: any) {
+          toast.error(e?.response?.data?.message || e?.message || `Không thể ${action} người dùng`);
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
 
   return (
     <Card>
@@ -103,9 +229,9 @@ const QuanLyNguoiDung: React.FC = () => {
                     <TableCell>{u.email || '—'}</TableCell>
                     <TableCell>{
                       u.role === 'admin' ? 'Quản trị viên'
-                      : u.role === 'patient' ? 'Người bệnh'
-                      : u.role === 'relative' ? 'Người thân'
-                      : '—'
+                        : u.role === 'patient' ? 'Người bệnh'
+                          : u.role === 'relative' ? 'Người thân'
+                            : '—'
                     }</TableCell>
                     <TableCell>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : (u.dateCreated || '—')}</TableCell>
                     <TableCell>
@@ -117,14 +243,32 @@ const QuanLyNguoiDung: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${u._id || u.id}`)}>Xem</Button>
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${u._id || u.id}/edit`)}>Sửa</Button>
+                        <Button variant="ghost" size="sm" title="Xem chi tiết" onClick={() => navigate(`/admin/users/${u._id || u.id}`)}>
+                          <TbEye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Chỉnh sửa" onClick={() => navigate(`/admin/users/${u._id || u.id}/edit`)}>
+                          <TbEdit className="w-4 h-4" />
+                        </Button>
                         {u.isBlocked || u.blocked ? (
-                          <Button variant="ghost" size="sm" className="text-green-600" title="Mở khoá" onClick={() => setBlockUserId(u._id || u.id)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-600"
+                            title="Mở khoá"
+                            onClick={(e) => handleBlockUser(u._id || u.id, true, e)}
+                            disabled={actionLoading === (u._id || u.id)}
+                          >
                             <TbLockOpen2 className="w-5 h-5" />
                           </Button>
                         ) : (
-                          <Button variant="ghost" size="sm" className="text-red-600" title="Khoá" onClick={() => setBlockUserId(u._id || u.id)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600"
+                            title="Khoá"
+                            onClick={(e) => handleBlockUser(u._id || u.id, false, e)}
+                            disabled={actionLoading === (u._id || u.id)}
+                          >
                             <TbLock className="w-5 h-5" />
                           </Button>
                         )}
@@ -161,37 +305,40 @@ const QuanLyNguoiDung: React.FC = () => {
                 </Button>
               </div>
             )}
-            {blockUserId && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" />
-                <div className="relative bg-white rounded-2xl shadow-2xl p-6 min-w-[340px] max-w-[90vw] animate-fadeIn flex flex-col">
-                  {modalLoading && <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10"><span className="loader" /></div>}
-                  <BlockUser userId={blockUserId} onDone={async () => {
-                    setModalLoading(true);
-                    setBlockUserId(null);
-                    await new Promise(r => setTimeout(r, 300));
-                    setPage(1);
-                    setModalLoading(false);
-                  }} />
-                  <div className="flex justify-end mt-2">
-                    <Button variant="ghost" onClick={() => setBlockUserId(null)}>Đóng</Button>
-                  </div>
-                </div>
-              </div>
+
+            {isRefreshing && (
+              <LoadingIndicator
+                type="refresh"
+                message="Đang tải lại..."
+                position="top-center"
+                size="md"
+              />
+            )}
+            {confirmDialog.isOpen && confirmDialog.targetElement && (
+              <Suspense fallback={<LoadingIndicator type="simple" message="Loading..." position="top-right" size="sm" />}>
+                <ConfirmDialogComponent
+                  message={confirmDialog.message}
+                  targetElement={confirmDialog.targetElement}
+                  onConfirm={confirmDialog.onConfirm}
+                  onCancel={() => setConfirmDialog({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null })}
+                />
+              </Suspense>
             )}
             {showCreate && (
               <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" />
                 <div className="relative bg-white rounded-2xl shadow-2xl p-6 min-w-[400px] max-w-[95vw] animate-fadeIn flex flex-col">
                   {modalLoading && <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10"><span className="loader" /></div>}
-                  <CreateUser onCreated={async () => {
-                    setModalLoading(true);
-                    setShowCreate(false);
-                    setPage(1); // luôn về trang 1
-                    // Đợi load lại danh sách user mới nhất
-                    await new Promise(r => setTimeout(r, 300));
-                    setModalLoading(false);
-                  }} />
+                  <Suspense fallback={<LoadingIndicator type="spinner" message="Đang tải..." position="center" size="md" />}>
+                    <LazyCreateUser onCreated={async () => {
+                      setModalLoading(true);
+                      setShowCreate(false);
+                      // Reload table data instead of page refresh
+                      await reloadTableData();
+                      await refreshWithDelay(300);
+                      setModalLoading(false);
+                    }} />
+                  </Suspense>
                 </div>
               </div>
             )}

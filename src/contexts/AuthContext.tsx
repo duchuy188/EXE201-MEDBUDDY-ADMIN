@@ -50,11 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const resp = await userServices.refreshToken();
       const data = resp?.data ?? resp;
-      const token = data?.accessToken || data?.token || data?.data?.accessToken || null;
+      const token = data?.accessToken || data?.access_token || data?.token || data?.data?.accessToken || null;
+      const refreshTok = data?.refreshToken || data?.refresh_token || data?.data?.refreshToken || null;
       const successFlag = data?.success ?? !!token;
       if (token) {
         localStorage.setItem('accessToken', token);
         setAccessToken(token);
+        if (refreshTok) {
+          try { localStorage.setItem('refreshToken', refreshTok); } catch {}
+        }
         // if refresh returned a user inside the body, persist it immediately
         const possibleUser = extractUserFromResponse(data);
         if (possibleUser) {
@@ -109,10 +113,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const resp = await userServices.login(email, password);
       const data = resp?.data ?? resp;
-      const token = data?.accessToken || data?.token || data?.data?.accessToken || null;
+      const token = data?.accessToken || data?.access_token || data?.token || data?.data?.accessToken || null;
+      const refreshTok = data?.refreshToken || data?.refresh_token || data?.data?.refreshToken || null;
       if (token) {
         localStorage.setItem('accessToken', token);
         setAccessToken(token);
+        if (refreshTok) {
+          try { localStorage.setItem('refreshToken', refreshTok); } catch {}
+        }
         // if login response already includes user data, persist immediately
         const possibleUser = extractUserFromResponse(data);
         if (possibleUser) {
@@ -157,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     } finally {
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       setAccessToken(null);
       setUser(null);
