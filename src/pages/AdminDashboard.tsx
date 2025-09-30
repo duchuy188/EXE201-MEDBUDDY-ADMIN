@@ -1,13 +1,32 @@
 
-import { useState } from "react";
+import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Package, Activity, Calendar, TrendingUp, Bell, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Users, Package, Activity, Calendar, TrendingUp, Bell, Settings, Gift } from "lucide-react";
+import Header from '@/components/Header';
+import UsersManagement from './UserManager/UsersManagement';
+import PacketManagement from './PacketManager/PacketManagement';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Map tab id to route
+  const tabRoutes = {
+    overview: "/admin",
+    users: "/admin/users",
+    medicines: "/admin/medicines",
+    packets: "/admin/packets",
+    settings: "/admin/settings",
+  };
+
+  // Determine active tab from current path
+  let activeTab = "overview";
+  if (location.pathname.startsWith("/admin/users")) activeTab = "users";
+  else if (location.pathname.startsWith("/admin/medicines")) activeTab = "medicines";
+  else if (location.pathname.startsWith("/admin/packets")) activeTab = "packets";
+  else if (location.pathname.startsWith("/admin/settings")) activeTab = "settings";
 
   const stats = [
     { title: "Tổng người dùng", value: "2,543", icon: Users, change: "+12%" },
@@ -113,52 +132,7 @@ const AdminDashboard = () => {
   );
 
   const renderUsers = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quản lý người dùng</CardTitle>
-        <CardDescription>Danh sách và quản lý tất cả người dùng trong hệ thống</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-2">
-            <Button variant="outline">Tất cả</Button>
-            <Button variant="outline">Người bệnh</Button>
-            <Button variant="outline">Người thân</Button>
-          </div>
-          <Button>Thêm người dùng</Button>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Tên</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Loại</TableHead>
-              <TableHead>Ngày tạo</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Hành động</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>#001</TableCell>
-              <TableCell>Nguyễn Văn An</TableCell>
-              <TableCell>an.nguyen@email.com</TableCell>
-              <TableCell>Người bệnh</TableCell>
-              <TableCell>15/12/2024</TableCell>
-              <TableCell><span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Hoạt động</span></TableCell>
-              <TableCell>
-                <div className="flex space-x-1">
-                  <Button variant="ghost" size="sm">Xem</Button>
-                  <Button variant="ghost" size="sm">Sửa</Button>
-                  <Button variant="ghost" size="sm" className="text-red-600">Khóa</Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <UsersManagement />
   );
 
   const renderSettings = () => (
@@ -199,28 +173,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-cream via-white to-mint-pastel/20">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <div>
-              <h1 className="text-3xl font-bold font-mulish">
-                <span className="bg-gradient-to-r from-mint-pastel to-pink-pastel bg-clip-text text-transparent">
-                  Admin Dashboard
-                </span>
-              </h1>
-              <p className="text-gray-600">Quản lý hệ thống HAP MEDBUDDY</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Bell className="h-4 w-4 mr-2" />
-              Thông báo
-            </Button>
-            <Button variant="outline" size="sm">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Báo cáo
-            </Button>
-          </div>
-        </div>
+        <Header />
 
         {/* Navigation Tabs */}
         <div className="flex space-x-1 mb-8 bg-white rounded-lg p-1 shadow-sm">
@@ -228,13 +181,14 @@ const AdminDashboard = () => {
             { id: 'overview', label: 'Tổng quan', icon: TrendingUp },
             { id: 'users', label: 'Người dùng', icon: Users },
             { id: 'medicines', label: 'Thuốc', icon: Package },
+            { id: 'packets', label: 'Gói dịch vụ', icon: Gift },
             { id: 'settings', label: 'Cài đặt', icon: Settings },
           ].map((tab) => (
             <Button
               key={tab.id}
               variant={activeTab === tab.id ? "default" : "ghost"}
               className="flex-1"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => navigate(tabRoutes[tab.id])}
             >
               <tab.icon className="h-4 w-4 mr-2" />
               {tab.label}
@@ -244,22 +198,13 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div>
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'users' && renderUsers()}
-          {activeTab === 'medicines' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Quản lý thuốc</CardTitle>
-                <CardDescription>Theo dõi và quản lý kho thuốc trong hệ thống</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-muted-foreground py-8">
-                  Tính năng quản lý thuốc đang được phát triển...
-                </p>
-              </CardContent>
-            </Card>
+          {/* If at /admin (overview), render overview; otherwise render nested route via Outlet
+             This ensures nested routes like /admin/users/:id are shown instead of being overridden */}
+          {location.pathname === "/admin" || location.pathname === "/admin/" ? (
+            renderOverview()
+          ) : (
+            <Outlet />
           )}
-          {activeTab === 'settings' && renderSettings()}
         </div>
       </div>
     </div>
