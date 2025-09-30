@@ -8,7 +8,7 @@ import { UserWithoutPassword } from '@/types/auth';
 import CreateUser from './CreateUser';
 import { TbLock, TbLockOpen2, TbEye, TbEdit } from 'react-icons/tb';
 import { FiFilter } from 'react-icons/fi';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 import useLazyLoading from '@/hooks/useLazyLoading';
 import LoadingIndicator from '@/components/LoadingIndicator';
 
@@ -21,26 +21,74 @@ const ConfirmDialogComponent: React.FC<{
   onConfirm: () => void;
   onCancel: () => void;
 }> = ({ message, targetElement, onConfirm, onCancel }) => {
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState({ top: 0, left: 0, opacity: 0 });
 
   useEffect(() => {
-    const updatePosition = () => {
+    const calculateInitialPosition = () => {
       if (targetElement) {
         const rect = targetElement.getBoundingClientRect();
+        const dialogWidth = 256;
+        const viewportWidth = window.innerWidth;
+
+        let left = rect.left - 100;
+
+        // Boundary checks
+        if (left < 10) {
+          left = 10;
+        }
+        if (left + dialogWidth > viewportWidth - 10) {
+          left = viewportWidth - dialogWidth - 10;
+        }
+
+        // Set position immediately without animation
         setPosition({
-          top: rect.top - 80,
-          left: rect.left - 150
+          top: Math.max(10, rect.top - 80),
+          left: left,
+          opacity: 1
         });
       }
     };
 
-    updatePosition();
-    window.addEventListener('scroll', updatePosition);
-    window.addEventListener('resize', updatePosition);
+    // Calculate position immediately on mount
+    calculateInitialPosition();
+
+    const updatePosition = () => {
+      if (targetElement) {
+        const rect = targetElement.getBoundingClientRect();
+        const dialogWidth = 256;
+        const viewportWidth = window.innerWidth;
+
+        let left = rect.left - 100;
+
+        if (left < 10) {
+          left = 10;
+        }
+        if (left + dialogWidth > viewportWidth - 10) {
+          left = viewportWidth - dialogWidth - 10;
+        }
+
+        setPosition(prev => ({
+          ...prev,
+          top: Math.max(10, rect.top - 80),
+          left: left
+        }));
+      }
+    };
+
+    // Debounced event listeners for scroll/resize
+    let timeoutId: NodeJS.Timeout;
+    const debouncedUpdate = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(updatePosition, 16);
+    };
+
+    window.addEventListener('scroll', debouncedUpdate, { passive: true });
+    window.addEventListener('resize', debouncedUpdate, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', updatePosition);
-      window.removeEventListener('resize', updatePosition);
+      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', debouncedUpdate);
+      window.removeEventListener('resize', debouncedUpdate);
     };
   }, [targetElement]);
 
@@ -49,7 +97,10 @@ const ConfirmDialogComponent: React.FC<{
       className="fixed z-50 bg-white rounded-lg shadow-lg border p-3 w-64"
       style={{
         top: `${position.top}px`,
-        left: `${position.left}px`
+        left: `${position.left}px`,
+        opacity: position.opacity,
+        transform: 'translate3d(0, 0, 0)', // Force hardware acceleration
+        transition: 'none' // Remove any CSS transitions that could cause flicker
       }}
     >
       <div className="text-sm mb-2">{message}</div>
@@ -83,7 +134,7 @@ const QuanLyNguoiDung: React.FC = () => {
   const [limit, setLimit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  const { isRefreshing, refreshWithDelay } = useLazyLoading();
+  const { silentRefresh } = useLazyLoading();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -94,8 +145,12 @@ const QuanLyNguoiDung: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>('all');
 
-  // Function to reload table data only
-  const reloadTableData = async () => {
+  // Function to reload table data only without flickering
+  const reloadTableData = async (showLoading = false) => {
+    if (showLoading) {
+      silentRefresh(); // Use silent refresh instead
+    }
+
     try {
       const params: any = { page, limit };
       if (roleFilter && roleFilter !== 'all') params.role = roleFilter;
@@ -161,16 +216,37 @@ const QuanLyNguoiDung: React.FC = () => {
         try {
           if (isCurrentlyBlocked) {
             await userServices.unblockUser(userId);
-            toast.success('Mở khóa người dùng thành công');
+            toast.success('Mở khóa người dùng thành công', {
+              position: "top-right",
+              autoClose: 2000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: false,
+              draggable: true
+            });
           } else {
             await userServices.blockUser(userId);
-            toast.success('Người dùng đã bị khóa');
+            toast.success('Người dùng đã bị khóa', {
+              position: "top-right",
+              autoClose: 2000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: false,
+              draggable: true
+            });
           }
-          // Reload only table data, not the entire page
-          await reloadTableData();
-          await refreshWithDelay(300);
+          // Reload only table data silently without flickering
+          await reloadTableData(false);
+          silentRefresh();
         } catch (e: any) {
-          toast.error(e?.response?.data?.message || e?.message || `Không thể ${action} người dùng`);
+          toast.error(e?.response?.data?.message || e?.message || `Không thể ${action} người dùng`, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true
+          });
         } finally {
           setActionLoading(null);
         }
@@ -306,14 +382,6 @@ const QuanLyNguoiDung: React.FC = () => {
               </div>
             )}
 
-            {isRefreshing && (
-              <LoadingIndicator
-                type="refresh"
-                message="Đang tải lại..."
-                position="top-center"
-                size="md"
-              />
-            )}
             {confirmDialog.isOpen && confirmDialog.targetElement && (
               <Suspense fallback={<LoadingIndicator type="simple" message="Loading..." position="top-right" size="sm" />}>
                 <ConfirmDialogComponent
@@ -333,9 +401,8 @@ const QuanLyNguoiDung: React.FC = () => {
                     <LazyCreateUser onCreated={async () => {
                       setModalLoading(true);
                       setShowCreate(false);
-                      // Reload table data instead of page refresh
-                      await reloadTableData();
-                      await refreshWithDelay(300);
+                      // Reload table data silently
+                      await reloadTableData(false);
                       setModalLoading(false);
                     }} />
                   </Suspense>

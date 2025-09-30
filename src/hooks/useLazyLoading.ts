@@ -25,16 +25,22 @@ export const useLazyLoading = () => {
         setIsRefreshing(false);
     }, []);
 
-    const refreshWithDelay = useCallback(async (delay: number = 500) => {
+    const refreshWithDelay = useCallback(async (delay: number = 200) => {
         setIsRefreshing(true);
         await new Promise(resolve => setTimeout(resolve, delay));
         setIsRefreshing(false);
     }, []);
 
-    const loadWithDelay = useCallback(async (delay: number = 300) => {
+    const loadWithDelay = useCallback(async (delay: number = 150) => {
         setIsLoading(true);
         await new Promise(resolve => setTimeout(resolve, delay));
         setIsLoading(false);
+    }, []);
+
+    // Optimized refresh without delay for immediate updates
+    const silentRefresh = useCallback(() => {
+        setIsRefreshing(true);
+        setTimeout(() => setIsRefreshing(false), 100); // Very brief flash
     }, []);
 
     return {
@@ -46,6 +52,7 @@ export const useLazyLoading = () => {
         stopRefreshing,
         refreshWithDelay,
         loadWithDelay,
+        silentRefresh,
     };
 };
 
