@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Spinner from '@/components/Spinner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { validateLogin } from '@/utils/validate';
+import { toast } from 'react-toastify';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -28,8 +29,20 @@ const Login: React.FC = () => {
       setLoading(true);
       const result = await auth.login(email, password);
       if (result.ok) {
+        toast.success('Đăng nhập thành công!', {
+          position: "top-right",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true
+        });
+        
         const from = (location.state as any)?.from?.pathname || '/admin';
-        navigate(from, { replace: true });
+        // Delay navigation slightly to show the toast
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 500);
         return;
       }
       setError(result.error || 'Đăng nhập thất bại');

@@ -1,5 +1,6 @@
 
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,10 +8,16 @@ import { Users, Package, Activity, Calendar, TrendingUp, Bell, Settings, Gift } 
 import Header from '@/components/Header';
 import UsersManagement from './UserManager/UsersManagement';
 import PacketManagement from './PacketManager/PacketManagement';
+import { getDashboardStats } from '@/services/payOsService';
+import { DashboardStatsData } from '@/types/payOs';
+import LoadingIndicator from '@/components/LoadingIndicator';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [dashboardData, setDashboardData] = useState<DashboardStatsData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Map tab id to route
   const tabRoutes = {
@@ -28,11 +35,74 @@ const AdminDashboard = () => {
   else if (location.pathname.startsWith("/admin/packets")) activeTab = "packets";
   else if (location.pathname.startsWith("/admin/settings")) activeTab = "settings";
 
-  const stats = [
-    { title: "Tổng người dùng", value: "2,543", icon: Users, change: "+12%" },
-    { title: "Thuốc được quản lý", value: "15,678", icon: Package, change: "+8%" },
-    { title: "Lần đo huyết áp", value: "8,234", icon: Activity, change: "+15%" },
-    { title: "Lịch tái khám", value: "1,456", icon: Calendar, change: "+5%" },
+  // Fetch dashboard data when component mounts or when switching to overview
+  useEffect(() => {
+    if (activeTab === "overview") {
+      fetchDashboardData();
+    }
+  }, [activeTab]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getDashboardStats();
+      if (response.success) {
+        setDashboardData(response.data);
+      } else {
+        setError('Không thể tải dữ liệu dashboard');
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Đã xảy ra lỗi khi tải dữ liệu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format number with thousand separators
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('vi-VN').format(num);
+  };
+
+  // Format currency
+  const formatCurrency = (num: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(num);
+  };
+
+  const stats = dashboardData ? [
+    { 
+      title: "Tổng doanh thu", 
+      value: formatCurrency(dashboardData.overview.totalRevenue), 
+      icon: TrendingUp, 
+      change: `${dashboardData.overview.successRate.toFixed(1)}% thành công` 
+    },
+    { 
+      title: "Tổng giao dịch", 
+      value: formatNumber(dashboardData.overview.totalTransactions), 
+      icon: Package, 
+      change: `${formatNumber(dashboardData.overview.successfulTransactions)} thành công` 
+    },
+    { 
+      title: "Giao dịch chờ xử lý", 
+      value: formatNumber(dashboardData.overview.pendingTransactions), 
+      icon: Activity, 
+      change: `${formatNumber(dashboardData.overview.cancelledTransactions)} đã hủy` 
+    },
+    { 
+      title: "Giá trị TB/giao dịch", 
+      value: formatCurrency(dashboardData.overview.averageTransactionValue), 
+      icon: Calendar, 
+      change: `${formatNumber(dashboardData.overview.expiredTransactions)} hết hạn` 
+    },
+  ] : [
+    { title: "Tổng doanh thu", value: "---", icon: TrendingUp, change: "---" },
+    { title: "Tổng giao dịch", value: "---", icon: Package, change: "---" },
+    { title: "Giao dịch chờ xử lý", value: "---", icon: Activity, change: "---" },
+    { title: "Giá trị TB/giao dịch", value: "---", icon: Calendar, change: "---" },
   ];
 
   const recentUsers = [
@@ -48,88 +118,120 @@ const AdminDashboard = () => {
     { id: 3, message: "Phát hiện 3 người dùng mới đăng ký", type: "info", time: "2 giờ trước" },
   ];
 
-  const renderOverview = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">{stat.change}</span> so với tháng trước
-              </p>
+  const renderOverview = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <LoadingIndicator />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-red-600">
+                <p>{error}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={fetchDashboardData}
+                  className="mt-4"
+                >
+                  Thử lại
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </div>
+      );
+    }
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Người dùng gần đây</CardTitle>
-            <CardDescription>Hoạt động của người dùng trong hệ thống</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Hoạt động cuối</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.type}</TableCell>
-                    <TableCell>{user.lastActive}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        user.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-                      </span>
-                    </TableCell>
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <stat.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-blue-600">{stat.change}</span>
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Package Statistics */}
+        {dashboardData?.packageStats && dashboardData.packageStats.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Thống kê theo gói dịch vụ</CardTitle>
+              <CardDescription>Doanh thu và số lượng theo từng gói</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên gói</TableHead>
+                    <TableHead>Số lượng</TableHead>
+                    <TableHead>Doanh thu</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {dashboardData.packageStats.map((pkg, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{pkg.packageName}</TableCell>
+                      <TableCell>{formatNumber(pkg.count)}</TableCell>
+                      <TableCell>{formatCurrency(pkg.totalRevenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Cảnh báo hệ thống</CardTitle>
-            <CardDescription>Thông báo và cảnh báo quan trọng</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {systemAlerts.map((alert) => (
-                <div key={alert.id} className="flex items-start space-x-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    alert.type === 'warning' ? 'bg-yellow-500' :
-                    alert.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-                  }`} />
-                  <div className="flex-1">
-                    <p className="text-sm">{alert.message}</p>
-                    <p className="text-xs text-muted-foreground">{alert.time}</p>
+        {/* Daily Statistics Chart Placeholder */}
+        {dashboardData?.dailyStats && dashboardData.dailyStats.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Thống kê theo ngày</CardTitle>
+              <CardDescription>Doanh thu và giao dịch hàng ngày</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {dashboardData.dailyStats.slice(0, 7).map((day, index) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm font-medium">
+                      {new Date(day._id).toLocaleDateString('vi-VN')}
+                    </span>
+                    <div className="text-right">
+                      <div className="text-sm font-bold">{formatCurrency(day.totalAmount)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatNumber(day.totalCount)} giao dịch
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+
+        
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderUsers = () => (
     <UsersManagement />
