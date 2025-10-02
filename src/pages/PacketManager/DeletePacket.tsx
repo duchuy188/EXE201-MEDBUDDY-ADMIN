@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { packetServices } from '@/services/packet';
+import { packetServices } from '@/services/packetService';
 import { toast } from 'sonner';
 
 const DeletePacket: React.FC<{ packetId: string; onDeleted?: () => void }> = ({ packetId, onDeleted }) => {
