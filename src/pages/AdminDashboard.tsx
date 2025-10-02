@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Package, Activity, Calendar, TrendingUp, Bell, Settings, Gift } from "lucide-react";
+import { Users, Package, Activity, Calendar, TrendingUp, Bell, Settings, Gift, Eye, EyeOff } from "lucide-react";
 import Header from '@/components/Header';
 import UsersManagement from './UserManager/UsersManagement';
 import PacketManagement from './PacketManager/PacketManagement';
@@ -18,6 +18,35 @@ const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState<DashboardStatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // State for managing visible tabs
+  const [visibleTabs, setVisibleTabs] = useState({
+    overview: true,
+    users: true,
+    medicines: true,
+    packets: true,
+    payos: true,
+    settings: true, // Settings tab is always visible
+  });
+
+  // Load tab visibility settings from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('admin-tab-visibility');
+    if (savedSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedSettings);
+        setVisibleTabs(prev => ({ ...prev, ...parsedSettings, settings: true })); // Always keep settings visible
+      } catch (error) {
+        console.error('Error loading tab visibility settings:', error);
+      }
+    }
+  }, []);
+
+  // Save tab visibility settings to localStorage
+  const saveTabVisibility = (newVisibility: typeof visibleTabs) => {
+    setVisibleTabs(newVisibility);
+    localStorage.setItem('admin-tab-visibility', JSON.stringify(newVisibility));
+  };
 
   // Map tab id to route
   const tabRoutes = {
@@ -25,6 +54,7 @@ const AdminDashboard = () => {
     users: "/admin/users",
     medicines: "/admin/medicines",
     packets: "/admin/packets",
+    payos: "/admin/payos",
     settings: "/admin/settings",
   };
 
@@ -33,6 +63,7 @@ const AdminDashboard = () => {
   if (location.pathname.startsWith("/admin/users")) activeTab = "users";
   else if (location.pathname.startsWith("/admin/medicines")) activeTab = "medicines";
   else if (location.pathname.startsWith("/admin/packets")) activeTab = "packets";
+  else if (location.pathname.startsWith("/admin/payos")) activeTab = "payos";
   else if (location.pathname.startsWith("/admin/settings")) activeTab = "settings";
 
   // Fetch dashboard data when component mounts or when switching to overview
@@ -237,39 +268,93 @@ const AdminDashboard = () => {
     <UsersManagement />
   );
 
-  const renderSettings = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Cấu hình hệ thống</CardTitle>
-          <CardDescription>Quản lý các thiết lập chung của ứng dụng</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Thông báo push</h4>
-              <p className="text-sm text-muted-foreground">Bật/tắt thông báo đẩy cho người dùng</p>
+  const renderSettings = () => {
+    const tabOptions = [
+      { id: 'overview', label: 'Tổng quan', icon: TrendingUp },
+      { id: 'users', label: 'Người dùng', icon: Users },
+      { id: 'medicines', label: 'Thuốc', icon: Package },
+      { id: 'packets', label: 'Gói dịch vụ', icon: Gift },
+      { id: 'payos', label: 'Thống kê thanh toán', icon: Bell },
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Tab Visibility Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Cài đặt hiển thị thanh điều hướng</CardTitle>
+            <CardDescription>
+              Chọn các tab bạn muốn hiển thị trên thanh điều hướng
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {tabOptions.map((tab) => (
+                <div key={tab.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <tab.icon className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">{tab.label}</span>
+                  </div>
+                  <Button
+                    variant={visibleTabs[tab.id as keyof typeof visibleTabs] ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const newVisibility = {
+                        ...visibleTabs,
+                        [tab.id]: !visibleTabs[tab.id as keyof typeof visibleTabs]
+                      };
+                      saveTabVisibility(newVisibility);
+                    }}
+                  >
+                    {visibleTabs[tab.id as keyof typeof visibleTabs] ? (
+                      <>
+                        <Eye className="h-4 w-4 mr-1" />
+                        Hiện
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-1" />
+                        Ẩn
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ))}
             </div>
-            <Button variant="outline">Cấu hình</Button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Backup tự động</h4>
-              <p className="text-sm text-muted-foreground">Sao lưu dữ liệu hằng ngày</p>
+            <div className="mt-6 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Khôi phục mặc định</h4>
+                  <p className="text-sm text-gray-600">Hiển thị lại tất cả các tab</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const defaultVisibility = {
+                      overview: true,
+                      users: true,
+                      medicines: true,
+                      packets: true,
+                      payos: true,
+                      settings: true,
+                    };
+                    saveTabVisibility(defaultVisibility);
+                  }}
+                >
+                  Khôi phục
+                </Button>
+              </div>
             </div>
-            <Button variant="outline">Cấu hình</Button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Bảo mật API</h4>
-              <p className="text-sm text-muted-foreground">Quản lý key và quyền truy cập</p>
-            </div>
-            <Button variant="outline">Cấu hình</Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+          </CardContent>
+        </Card>
+
+        {/* System Settings */}
+        
+      </div>
+    );
+  };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream via-white to-mint-pastel/20">
@@ -284,8 +369,11 @@ const AdminDashboard = () => {
             { id: 'users', label: 'Người dùng', icon: Users },
             { id: 'medicines', label: 'Thuốc', icon: Package },
             { id: 'packets', label: 'Gói dịch vụ', icon: Gift },
+            { id: 'payos', label: 'Thống kê thanh toán', icon: Bell },
             { id: 'settings', label: 'Cài đặt', icon: Settings },
-          ].map((tab) => (
+          ]
+          .filter(tab => visibleTabs[tab.id as keyof typeof visibleTabs])
+          .map((tab) => (
             <Button
               key={tab.id}
               variant={activeTab === tab.id ? "default" : "ghost"}
@@ -300,10 +388,12 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div>
-          {/* If at /admin (overview), render overview; otherwise render nested route via Outlet
+          {/* If at /admin (overview), render overview; if at /admin/settings render settings; otherwise render nested route via Outlet
              This ensures nested routes like /admin/users/:id are shown instead of being overridden */}
           {location.pathname === "/admin" || location.pathname === "/admin/" ? (
             renderOverview()
+          ) : location.pathname === "/admin/settings" ? (
+            renderSettings()
           ) : (
             <Outlet />
           )}
