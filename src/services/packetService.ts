@@ -27,23 +27,6 @@ export const packetServices = {
     return axiosInstance.delete(`/package/${id}`);
   },
 
-  // Get active package of the user
-  getUserActivePackage: () => {
-    return axiosInstance.get('/user-package/my-package');
-  },
-
-  // Check feature usage permission
-  checkFeaturePermission: (feature: string) => {
-    return axiosInstance.get<CheckFeatureResponse>(`/user-package/check-feature/${feature}`);
-  },
-
-
-
-  // Get user's package history
-  getUserPackageHistory: () => {
-    return axiosInstance.get('/user-package/my-history');
-  },
-
   // Cancel user's package (admin only)
   cancelUserPackage: (userId: string) => {
     return axiosInstance.put(`/user-package/admin/cancel/${userId}`);

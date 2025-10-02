@@ -7,8 +7,6 @@ import { Package } from '@/types/packet';
 import CreatePacket from './CreatePacket';
 import EditPacket from './EditPacket';
 import DeletePacket from './DeletePacket';
-import PacketHistory from './PacketHistory';
-import ActivePackage from './ActivePackage';
 import PackageStats from './PackageStats';
 import UserPackageDetails from './UserPackageDetails';
 
@@ -16,7 +14,7 @@ const PacketManagement: React.FC = () => {
   const [packets, setPackets] = useState<Package[]>([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [activeTab, setActiveTab] = useState<'packages' | 'history' | 'active' | 'stats' | 'userDetails'>('packages');
+  const [activeTab, setActiveTab] = useState<'packages' | 'stats' | 'userDetails'>('packages');
 
   const load = async () => {
     setLoading(true);
@@ -50,26 +48,6 @@ const PacketManagement: React.FC = () => {
             }`}
           >
             Quản lý gói
-          </button>
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'active'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Gói đang sử dụng
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'history'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Lịch sử giao dịch
           </button>
           <button
             onClick={() => setActiveTab('stats')}
@@ -147,15 +125,11 @@ const PacketManagement: React.FC = () => {
             </CardContent>
           </Card>
         </>
-      ) : activeTab === 'active' ? (
-        <ActivePackage />
       ) : activeTab === 'stats' ? (
         <PackageStats />
       ) : activeTab === 'userDetails' ? (
         <UserPackageDetails />
-      ) : (
-        <PacketHistory />
-      )}
+      ) : null}
     </div>
   );
 };
