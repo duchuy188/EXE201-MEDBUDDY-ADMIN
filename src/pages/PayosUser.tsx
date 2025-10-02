@@ -196,7 +196,7 @@ const PayosUser = () => {
       {/* Header - Extra Compact */}
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">Thống kê thanh toán</h1>
+          <h1 className="text-lg font-semibold text-gray-900">Thống kê thanh toán người dùng</h1>
           <p className="text-gray-600 text-xs">Quản lý các giao dịch thanh toán</p>
         </div>
         <Button onClick={() => fetchPayments(currentPage)} disabled={loading} size="sm">
@@ -220,8 +220,8 @@ const PayosUser = () => {
           <Card key={index} className="hover:shadow-sm">
             <CardContent className="p-2">
               <div className="text-center">
-                <div className={`inline-flex p-1 rounded-full ${stat.bgColor} mb-1`}>
-                  <stat.icon className={`h-2 w-2 ${stat.color}`} />
+                <div className={`inline-flex p-1.5 rounded-full ${stat.bgColor} mb-1`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
                 <p className="text-xs font-medium text-gray-600 mb-0.5 leading-none">{stat.title}</p>
                 <p className="text-xs font-bold text-gray-900 mb-0.5 leading-none">{stat.value}</p>

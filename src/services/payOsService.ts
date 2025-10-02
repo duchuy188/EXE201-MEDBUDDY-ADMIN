@@ -6,8 +6,8 @@ export const getPayments = async (params?: Record<string, any>) => {
     return res.data;
 };
 
-export const getDashboardStats = async () => {
-    const res = await axiosInstance.get(`payos/admin/dashboard-stats`);
+export const getDashboardStats = async (params?: { startDate?: string; endDate?: string }) => {
+    const res = await axiosInstance.get(`payos/admin/dashboard-stats`, { params });
     return res.data;
 };
 
