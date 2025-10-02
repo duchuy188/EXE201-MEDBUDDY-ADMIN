@@ -1,4 +1,4 @@
-import { Package, CheckFeatureResponse, UserPackageDetailsResponse } from '@/types/packet';
+import { Package, CheckFeatureResponse, UserPackageDetailsResponse, PackageStatsResponse, PackageStatsItem } from '@/types/packet';
 import axiosInstance from '../config/axiosInstance';
 
 export const packetServices = {
@@ -39,7 +39,7 @@ export const packetServices = {
 
   // Get package statistics (admin only)
   getPackageStats: () => {
-    return axiosInstance.get('/user-package/admin/stats');
+    return axiosInstance.get<PackageStatsResponse>('/user-package/admin/stats');
   },
 
   // Get user details and package (admin only)

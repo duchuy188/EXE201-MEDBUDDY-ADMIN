@@ -14,17 +14,22 @@ const PackageStats: React.FC = () => {
   const loadStats = async () => {
     setLoading(true);
     try {
-      console.log('Calling getPackageStats API...');
+
       const response = await packetServices.getPackageStats();
-      console.log('API Response:', response);
-      console.log('Response data:', response?.data);
+
       
-      // Try different data paths to see what the API actually returns
-      const statsData = response?.data?.data || response?.data || [];
+      // API returns structure: { message: string, data: PackageStatsItem[] }
+      const statsData = response?.data?.data || [];
       console.log('Extracted stats data:', statsData);
       
-      setStats(Array.isArray(statsData) ? statsData : []);
-      setApiStatus('success');
+      if (Array.isArray(statsData)) {
+        setStats(statsData);
+        setApiStatus('success');
+      } else {
+        console.warn('API response data is not an array:', statsData);
+        setStats([]);
+        setApiStatus('error');
+      }
     } catch (error: any) {
       console.error('Error loading package stats:', error);
       console.error('Error details:', error?.response?.data || error?.message);
@@ -186,7 +191,7 @@ const PackageStats: React.FC = () => {
                   const percentage = totalUsers > 0 ? ((pkg.activeUsers / totalUsers) * 100) : 0;
                   
                   return (
-                    <div key={pkg.packageName} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div key={pkg.id || pkg.packageName} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -243,7 +248,7 @@ const PackageStats: React.FC = () => {
                   .sort((a, b) => b.activeUsers - a.activeUsers)
                   .slice(0, 3)
                   .map((pkg, index) => (
-                    <div key={pkg.packageName} className="flex items-center space-x-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                    <div key={pkg.id || pkg.packageName} className="flex items-center space-x-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                       <div className="flex-shrink-0">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           index === 0 ? 'bg-yellow-100 text-yellow-800' :

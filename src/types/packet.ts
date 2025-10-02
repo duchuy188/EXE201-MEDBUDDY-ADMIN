@@ -80,6 +80,7 @@ export interface ActivePackageResponse {
   data?: ActivePackageData;
 }
 export interface PackageStatsItem {
+  id: string;
   packageName: string;
   activeUsers: number;
 }
