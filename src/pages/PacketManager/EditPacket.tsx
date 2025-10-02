@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { packetServices } from '@/services/packet';
+import { packetServices } from '@/services/packetService';
 import { Package } from '@/types/packet';
 import { toast } from 'sonner';
 

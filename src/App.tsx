@@ -5,6 +5,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AdminDashboard from "./pages/AdminDashboard";
 import UsersManagement from "./pages/UserManager/UsersManagement";
+import PayosUser from "./pages/PayosUser";
 // Dummy Medicines and Settings pages
 const MedicinesPage = () => (
   <div className="space-y-6"><div className="card"><div className="card-header"><h2>Quản lý thuốc</h2><p>Theo dõi và quản lý kho thuốc trong hệ thống</p></div><div className="card-content"><p className="text-center text-muted-foreground py-8">Tính năng quản lý thuốc đang được phát triển...</p></div></div></div>
@@ -35,10 +36,10 @@ const App = () => (
         }>
           <Route index element={<div>{/* Overview tab */}{/* Rendered in AdminDashboard */}</div>} />
           <Route path="users" element={<UsersManagement />} />
-          <Route path="users/:id" element={<ViewUser />} />
           <Route path="users/:id/edit" element={<EditUser />} />
           <Route path="medicines" element={<MedicinesPage />} />
           <Route path="packets" element={<PacketManagement />} />
+          <Route path="payos" element={<PayosUser />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
         <Route path="/admin/profile" element={

@@ -6,7 +6,8 @@ import { userServices } from '@/services/usersService';
 import { useNavigate } from 'react-router-dom';
 import { UserWithoutPassword } from '@/types/auth';
 import CreateUser from './CreateUser';
-import { TbLock, TbLockOpen2, TbEye, TbEdit } from 'react-icons/tb';
+import ViewUser from './ViewUser';
+import { TbLock, TbLockOpen2, TbEye } from 'react-icons/tb';
 import { FiFilter } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import useLazyLoading from '@/hooks/useLazyLoading';
@@ -144,6 +145,10 @@ const QuanLyNguoiDung: React.FC = () => {
   }>({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null });
   const [showCreate, setShowCreate] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [viewUserPopup, setViewUserPopup] = useState<{
+    isOpen: boolean;
+    userId: string | null;
+  }>({ isOpen: false, userId: null });
 
   // Function to reload table data only without flickering
   const reloadTableData = async (showLoading = false) => {
@@ -255,6 +260,7 @@ const QuanLyNguoiDung: React.FC = () => {
   };
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Quản lý người dùng</CardTitle>
@@ -292,7 +298,7 @@ const QuanLyNguoiDung: React.FC = () => {
                 <TableRow>
                   <TableHead>Tên</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Loại</TableHead>
+                  <TableHead>Vai trò</TableHead>
                   <TableHead>Ngày tạo</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Hành động</TableHead>
@@ -319,11 +325,13 @@ const QuanLyNguoiDung: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm" title="Xem chi tiết" onClick={() => navigate(`/admin/users/${u._id || u.id}`)}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          title="Xem chi tiết" 
+                          onClick={() => setViewUserPopup({ isOpen: true, userId: u._id || u.id })}
+                        >
                           <TbEye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" title="Chỉnh sửa" onClick={() => navigate(`/admin/users/${u._id || u.id}/edit`)}>
-                          <TbEdit className="w-4 h-4" />
                         </Button>
                         {u.isBlocked || u.blocked ? (
                           <Button
@@ -414,6 +422,17 @@ const QuanLyNguoiDung: React.FC = () => {
 
       </CardContent>
     </Card>
+
+    {/* ViewUser Popup */}
+    {viewUserPopup.isOpen && (
+      <ViewUser
+        isOpen={viewUserPopup.isOpen}
+        onClose={() => setViewUserPopup({ isOpen: false, userId: null })}
+        userId={viewUserPopup.userId}
+        onUpdated={() => reloadTableData(true)}
+      />
+    )}
+    </>
   );
 };
 
