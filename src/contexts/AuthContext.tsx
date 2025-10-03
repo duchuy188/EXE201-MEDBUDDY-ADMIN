@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { userServices } from '@/services/usersService';
+import { isTokenExpired } from '@/config/axiosInstance';
 
 type User = any | null;
 
@@ -36,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(profile);
       try {
         if (profile) localStorage.setItem('user', JSON.stringify(profile));
-      } catch {}
+      } catch { }
     } catch (e) {
       // keep token but no profile available — log for debugging
       // (network / permission / response-shape issues can cause this)
@@ -48,22 +49,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refresh = async (): Promise<boolean> => {
     try {
+      const currentRefreshToken = localStorage.getItem('refreshToken');
+      if (!currentRefreshToken) {
+        return false;
+      }
+
       const resp = await userServices.refreshToken();
       const data = resp?.data ?? resp;
+
       const token = data?.accessToken || data?.access_token || data?.token || data?.data?.accessToken || null;
       const refreshTok = data?.refreshToken || data?.refresh_token || data?.data?.refreshToken || null;
       const successFlag = data?.success ?? !!token;
+
+      // Get current tokens for comparison
+      const currentAccessToken = localStorage.getItem('accessToken');
+      const currentRefreshTokenStored = localStorage.getItem('refreshToken');
+
       if (token) {
         localStorage.setItem('accessToken', token);
         setAccessToken(token);
+
         if (refreshTok) {
-          try { localStorage.setItem('refreshToken', refreshTok); } catch {}
+          try {
+            localStorage.setItem('refreshToken', refreshTok);
+          } catch (e) {
+            // Handle localStorage errors silently
+          }
         }
         // if refresh returned a user inside the body, persist it immediately
         const possibleUser = extractUserFromResponse(data);
         if (possibleUser) {
           setUser(possibleUser);
-          try { localStorage.setItem('user', JSON.stringify(possibleUser)); } catch {}
+          try { localStorage.setItem('user', JSON.stringify(possibleUser)); } catch { }
         } else {
           await fetchProfile();
         }
@@ -82,31 +99,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let interval: NodeJS.Timeout;
+
     const init = async () => {
       setChecking(true);
       try {
         if (accessToken) {
           await fetchProfile();
         } else {
-          await refresh();
+          const refreshSuccess = await refresh();
+          if (!refreshSuccess) {
+            // Refresh failed, user needs to login
+          }
         }
       } finally {
-        if (mounted) setChecking(false);
+        if (mounted) {
+          setChecking(false);
+        }
       }
     };
+
     init();
 
-    // Đặt interval tự động refresh token mỗi 50 phút (3000000 ms)
-    const interval = setInterval(() => {
-      refresh();
-    }, 50 * 60 * 1000);
+    // Đặt interval kiểm tra và refresh token mỗi 5 phút
+    // Check token periodically every 5 minutes
+    interval = setInterval(async () => {
+      const currentToken = localStorage.getItem('accessToken');
+      const refreshTokenAvailable = localStorage.getItem('refreshToken');
+
+      if (currentToken && refreshTokenAvailable) {
+        // Check if token will expire soon
+        const willExpireSoon = isTokenExpired(currentToken);
+
+        if (willExpireSoon) {
+          const refreshSuccess = await refresh();
+          if (!refreshSuccess) {
+            // Auto refresh failed
+          }
+        }
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
 
     return () => {
       mounted = false;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Keep empty dependency array as intended
 
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -119,13 +158,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('accessToken', token);
         setAccessToken(token);
         if (refreshTok) {
-          try { localStorage.setItem('refreshToken', refreshTok); } catch {}
+          try { localStorage.setItem('refreshToken', refreshTok); } catch { }
         }
         // if login response already includes user data, persist immediately
         const possibleUser = extractUserFromResponse(data);
         if (possibleUser) {
           setUser(possibleUser);
-          try { localStorage.setItem('user', JSON.stringify(possibleUser)); } catch {}
+          try { localStorage.setItem('user', JSON.stringify(possibleUser)); } catch { }
         } else {
           await fetchProfile();
         }

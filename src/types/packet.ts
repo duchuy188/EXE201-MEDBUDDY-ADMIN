@@ -123,4 +123,9 @@ export interface UserPackageDetailsResponse {
   message: string;
   data: UserPackageDetailsData;
 }
+
+
+
+
+
 export default Package;

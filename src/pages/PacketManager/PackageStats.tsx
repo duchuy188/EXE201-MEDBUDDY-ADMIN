@@ -17,11 +17,10 @@ const PackageStats: React.FC = () => {
 
       const response = await packetServices.getPackageStats();
 
-      
+
       // API returns structure: { message: string, data: PackageStatsItem[] }
       const statsData = response?.data?.data || [];
-      console.log('Extracted stats data:', statsData);
-      
+
       if (Array.isArray(statsData)) {
         setStats(statsData);
         setApiStatus('success');
@@ -57,57 +56,10 @@ const PackageStats: React.FC = () => {
           <h2 className="text-lg font-semibold">Thống kê gói dịch vụ</h2>
           <div className="flex items-center space-x-2">
             <p className="text-sm text-gray-600">Tổng quan về việc sử dụng gói dịch vụ</p>
-            {apiStatus === 'success' && (
-              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">API OK</span>
-            )}
             {apiStatus === 'error' && (
               <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">API Error - Endpoint không tồn tại</span>
             )}
           </div>
-        </div>
-        <div className="flex space-x-2">
-          <Button
-            onClick={loadStats}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Đang tải...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Làm mới API
-              </>
-            )}
-          </Button>
-          
-          <Button
-            onClick={() => {
-              console.log('Testing direct API call...');
-              packetServices.getPackageStats()
-                .then(response => {
-                  console.log('Direct API test success:', response);
-                  alert('API Test Success! Check console for details.');
-                })
-                .catch(error => {
-                  console.error('Direct API test failed:', error);
-                  alert('API Test Failed! Check console for error details.');
-                });
-            }}
-            variant="outline"
-            size="sm"
-          >
-            🔍 Test API
-          </Button>
         </div>
       </div>
 
@@ -130,7 +82,7 @@ const PackageStats: React.FC = () => {
                 {apiStatus === 'error' ? 'API chưa sẵn sàng' : 'Chưa có dữ liệu thống kê'}
               </h3>
               <p className="text-gray-500">
-                {apiStatus === 'error' 
+                {apiStatus === 'error'
                   ? 'Endpoint /user-package/admin/stats chưa được implement trên server.'
                   : 'Không có thông tin về gói dịch vụ nào.'
                 }
@@ -189,7 +141,7 @@ const PackageStats: React.FC = () => {
                 {stats.map((pkg, index) => {
                   const totalUsers = stats.reduce((total, item) => total + item.activeUsers, 0);
                   const percentage = totalUsers > 0 ? ((pkg.activeUsers / totalUsers) * 100) : 0;
-                  
+
                   return (
                     <div key={pkg.id || pkg.packageName} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex-1">
@@ -203,29 +155,28 @@ const PackageStats: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-6">
                         <div className="text-center">
                           <p className="text-2xl font-bold text-blue-600">{pkg.activeUsers}</p>
                           <p className="text-xs text-gray-500">người dùng</p>
                         </div>
-                        
+
                         <div className="text-center">
                           <p className="text-lg font-semibold text-green-600">{percentage.toFixed(1)}%</p>
                           <p className="text-xs text-gray-500">tỷ lệ sử dụng</p>
                         </div>
-                        
+
                         {/* Visual progress bar */}
                         <div className="w-24">
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`bg-blue-500 h-2 rounded-full transition-all duration-300 ${
-                                percentage >= 90 ? 'w-full' :
+                            <div
+                              className={`bg-blue-500 h-2 rounded-full transition-all duration-300 ${percentage >= 90 ? 'w-full' :
                                 percentage >= 75 ? 'w-11/12' :
-                                percentage >= 50 ? 'w-3/4' :
-                                percentage >= 25 ? 'w-2/4' :
-                                percentage >= 10 ? 'w-1/4' : 'w-1/12'
-                              }`}
+                                  percentage >= 50 ? 'w-3/4' :
+                                    percentage >= 25 ? 'w-2/4' :
+                                      percentage >= 10 ? 'w-1/4' : 'w-1/12'
+                                }`}
                             ></div>
                           </div>
                         </div>
@@ -250,11 +201,10 @@ const PackageStats: React.FC = () => {
                   .map((pkg, index) => (
                     <div key={pkg.id || pkg.packageName} className="flex items-center space-x-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
                       <div className="flex-shrink-0">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          index === 0 ? 'bg-yellow-100 text-yellow-800' :
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${index === 0 ? 'bg-yellow-100 text-yellow-800' :
                           index === 1 ? 'bg-gray-100 text-gray-800' :
-                          'bg-orange-100 text-orange-800'
-                        }`}>
+                            'bg-orange-100 text-orange-800'
+                          }`}>
                           <span className="font-bold text-sm">#{index + 1}</span>
                         </div>
                       </div>

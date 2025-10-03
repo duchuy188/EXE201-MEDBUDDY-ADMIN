@@ -5,8 +5,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { packetServices } from '@/services/packetService';
 import { Package } from '@/types/packet';
 import CreatePacket from './CreatePacket';
+import CreateTrialPackage from './CreateTrialPackage';
 import EditPacket from './EditPacket';
 import DeletePacket from './DeletePacket';
+import ViewPackage from './ViewPackage';
+import { toast } from 'sonner';
 import PackageStats from './PackageStats';
 import UserPackageDetails from './UserPackageDetails';
 
@@ -63,13 +66,15 @@ const PacketManagement: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
               }`}
           >
-            Chi tiết User
+            Dịch vụ gói người dùng
           </button>
         </div>
 
-        {/* Action Button - only show on packages tab */}
+        {/* Action Buttons - only show on packages tab */}
         {activeTab === 'packages' && (
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <CreateTrialPackage onCreated={load} packagesCount={packets.length} />
+            <div className="flex-1" />
             <CreatePacket onCreated={load} />
           </div>
         )}
@@ -93,7 +98,7 @@ const PacketManagement: React.FC = () => {
                       <TableHead className="w-24">Giá</TableHead>
                       <TableHead className="w-28">Thời lượng</TableHead>
                       <TableHead className="max-w-48">Mô tả</TableHead>
-                      <TableHead className="max-w-48">Features</TableHead>
+                      <TableHead className="max-w-48">Tính Năng</TableHead>
                       <TableHead className="w-32">Ngày tạo</TableHead>
                       <TableHead className="w-32">Hành động</TableHead>
                     </TableRow>
@@ -122,6 +127,7 @@ const PacketManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-1">
+                            <ViewPackage packet={p} />
                             <EditPacket key={`edit-${p._id}`} onUpdated={load} packet={p} />
                             <DeletePacket key={`delete-${p._id}`} packetId={p._id} onDeleted={load} />
                           </div>

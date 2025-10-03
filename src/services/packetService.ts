@@ -1,11 +1,11 @@
-import { Package, CheckFeatureResponse, UserPackageDetailsResponse, PackageStatsResponse, PackageStatsItem, CreatePackageDTO } from '@/types/packet';
+import { Package, CheckFeatureResponse, UserPackageDetailsResponse, PackageStatsResponse, PackageStatsItem, CreatePackageDTO, ActivePackageResponse } from '@/types/packet';
 import axiosInstance from '../config/axiosInstance';
 
 export const packetServices = {
   // create 3 default packages (testing/basic/advanced)
-  // createDefaultPackages: () => {
-  //   return axiosInstance.post('/package/create');
-  // },
+  createDefaultPackages: () => {
+    return axiosInstance.post('/package/create');
+  },
 
   // create a new package (admin only)
   createPackage: (body: CreatePackageDTO) => {
@@ -33,8 +33,8 @@ export const packetServices = {
   },
 
   // Extend user's package (admin only)
-  extendUserPackage: (userId: string) => {
-    return axiosInstance.put(`/user-package/admin/extend/${userId}`);
+  extendUserPackage: (userId: string, extendData?: { additionalDuration: number; unit: string }) => {
+    return axiosInstance.put(`/user-package/admin/extend/${userId}`, extendData);
   },
 
   // Get package statistics (admin only)
@@ -47,6 +47,10 @@ export const packetServices = {
     return axiosInstance.get<UserPackageDetailsResponse>(`/user-package/admin/user/${userId}`);
   },
 
+  // Get my active package (user)
+  getMyActivePackage: () => {
+    return axiosInstance.get<ActivePackageResponse>('/user-package/my-package');
+  },
 };
 
 export default packetServices;

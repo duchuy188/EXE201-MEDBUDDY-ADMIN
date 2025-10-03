@@ -12,13 +12,14 @@ export interface User {
 
     // Additional fields from API response
     avatar?: string;
+    isActive?: boolean;
     isBlocked?: boolean;
     blockedAt?: string | null;
     blockedBy?: {
         _id: string;
         fullName: string;
         email: string;
-    } 
+    }
 
     createdAt?: string;
     updatedAt?: string;
