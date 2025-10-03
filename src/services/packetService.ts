@@ -1,4 +1,4 @@
-import { Package, CheckFeatureResponse, UserPackageDetailsResponse, PackageStatsResponse, PackageStatsItem } from '@/types/packet';
+import { Package, CheckFeatureResponse, UserPackageDetailsResponse, PackageStatsResponse, PackageStatsItem, CreatePackageDTO } from '@/types/packet';
 import axiosInstance from '../config/axiosInstance';
 
 export const packetServices = {
@@ -8,7 +8,7 @@ export const packetServices = {
   // },
 
   // create a new package (admin only)
-  createPackage: (body: any) => {
+  createPackage: (body: CreatePackageDTO) => {
     return axiosInstance.post('/package', body);
   },
 

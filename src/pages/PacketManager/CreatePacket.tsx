@@ -1,22 +1,50 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { packetServices } from '@/services/packetService';
 import { toast } from 'sonner';
 import { CreatePackageDTO } from '@/types/packet';
+import { TbX, TbPlus } from 'react-icons/tb';
 
 const CreatePacket: React.FC<{ onCreated?: () => void }> = ({ onCreated }) => {
-  const [form, setForm] = useState<CreatePackageDTO>({ name: '', description: '', price: 0, duration: 7, unit: 'day', features: [] });
+  const [isOpen, setIsOpen] = useState(false);
+  const [form, setForm] = useState<CreatePackageDTO>({ name: '', description: '', price: 0, duration: 1, unit: 'month', features: [] });
   const [featureInput, setFeatureInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ [k: string]: string }>({});
 
+  const openModal = () => {
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setForm({ name: '', description: '', price: 0, duration: 1, unit: 'month', features: [] });
+    setFeatureInput('');
+    setErrors({});
+  };
+
+  const validate = () => {
+    const newErrors: { [k: string]: string } = {};
+    if (!form.name?.trim()) newErrors.name = 'Tên gói là bắt buộc';
+    if (!form.description?.trim()) newErrors.description = 'Mô tả là bắt buộc';
+    if (!form.price || form.price <= 0) newErrors.price = 'Giá phải lớn hơn 0';
+    if (!form.duration || form.duration <= 0) newErrors.duration = 'Thời lượng phải lớn hơn 0';
+    if (!form.unit?.trim()) newErrors.unit = 'Đơn vị là bắt buộc';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleCreate = async () => {
+    if (!validate()) return;
+
     setLoading(true);
     try {
-  const body: CreatePackageDTO = { ...form, features: form.features };
+      const body: CreatePackageDTO = { ...form, features: form.features };
       await packetServices.createPackage(body);
       toast.success('Tạo gói dịch vụ thành công');
+      closeModal();
       onCreated?.();
     } catch (e: any) {
       toast.error(e?.response?.data?.message || e?.message || 'Không thể tạo gói dịch vụ');
@@ -25,78 +53,187 @@ const CreatePacket: React.FC<{ onCreated?: () => void }> = ({ onCreated }) => {
     }
   };
 
+  const addFeature = () => {
+    const v = featureInput.trim();
+    if (v && !form.features.includes(v)) {
+      setForm({ ...form, features: [...form.features, v] });
+      setFeatureInput('');
+    }
+  };
+
+  const removeFeature = (feature: string) => {
+    setForm({
+      ...form,
+      features: form.features.filter(f => f !== feature)
+    });
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Tạo gói dịch vụ</CardTitle>
-        <CardDescription>Thêm gói dịch vụ mới (chỉ admin)</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium">Tên gói</label>
-            <input aria-label="Tên gói" placeholder="Tên gói" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1 w-full border rounded px-3 py-2" />
-            {errors.name && <div className="text-red-600 text-sm mt-1">{errors.name}</div>}
-          </div>
+    <>
+      <Button
+        onClick={openModal}
+        className="flex items-center gap-2"
+        title="Thêm gói mới"
+      >
+        <TbPlus className="w-4 h-4" />
+        Thêm gói
+      </Button>
 
-          <div>
-            <label className="block text-sm font-medium">Giá</label>
-            <input aria-label="Giá" type="number" placeholder="Giá" value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value) })} className="mt-1 w-full border rounded px-3 py-2" />
-            {errors.price && <div className="text-red-600 text-sm mt-1">{errors.price}</div>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Thời lượng</label>
-            <input aria-label="Thời lượng" type="number" placeholder="Thời lượng" value={form.duration} onChange={e => setForm({ ...form, duration: Number(e.target.value) })} className="mt-1 w-full border rounded px-3 py-2" />
-            {errors.duration && <div className="text-red-600 text-sm mt-1">{errors.duration}</div>}
-          </div>
-
-          <div>
-            <label className="sr-only" htmlFor="create-unit">Đơn vị</label>
-            <select id="create-unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value as any })} className="mt-1 w-full border rounded px-3 py-2">
-              <option value="day">Ngày</option>
-              <option value="week">Tuần</option>
-              <option value="month">Tháng</option>
-              <option value="year">Năm</option>
-            </select>
-          </div>
-
-          <div className="col-span-1 sm:col-span-2">
-            <label className="block text-sm font-medium">Mô tả</label>
-            <textarea aria-label="Mô tả" placeholder="Mô tả ngắn về gói" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1 w-full border rounded px-3 py-2" rows={3} />
-
-            <label className="block text-sm font-medium mt-3">Tính năng (thêm từng mục)</label>
-            <div className="flex items-center space-x-2 mt-1">
-              <input aria-label="Thêm tính năng" placeholder="Thêm tính năng" value={featureInput} onChange={e => setFeatureInput(e.target.value)} className="flex-1 border rounded px-3 py-2" onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ',') {
-                  e.preventDefault();
-                  const v = featureInput.trim();
-                  if (v && !form.features.includes(v)) setForm({ ...form, features: [...form.features, v] });
-                  setFeatureInput('');
-                }
-              }} />
-              <Button onClick={() => {
-                const v = featureInput.trim();
-                if (v && !form.features.includes(v)) setForm({ ...form, features: [...form.features, v] });
-                setFeatureInput('');
-              }}>Thêm</Button>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 border-b pb-4">
+              <h2 className="text-xl font-bold text-gray-800">Tạo gói dịch vụ mới</h2>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Đóng"
+              >
+                <TbX className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {form.features.map((f, i) => (
-                <div key={i} className="px-2 py-1 bg-gray-100 rounded-full flex items-center space-x-2">
-                  <span className="text-sm">{f}</span>
-                  <button className="text-xs text-red-600" onClick={() => setForm({ ...form, features: form.features.filter((x) => x !== f) })} aria-label={`Xóa tính năng ${f}`}>×</button>
+
+            {/* Form Content */}
+            <div className="space-y-4">
+              {/* Package Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tên gói <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  placeholder="Nhập tên gói"
+                  className={errors.name ? 'border-red-500' : ''}
+                />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mô tả <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                  placeholder="Nhập mô tả gói"
+                  rows={3}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+              </div>
+
+              {/* Price and Duration */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Giá <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="number"
+                    value={form.price || ''}
+                    onChange={e => setForm({ ...form, price: Number(e.target.value) })}
+                    placeholder="0"
+                    className={errors.price ? 'border-red-500' : ''}
+                  />
+                  {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Thời lượng <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      value={form.duration || ''}
+                      onChange={e => setForm({ ...form, duration: Number(e.target.value) })}
+                      placeholder="1"
+                      className={errors.duration ? 'border-red-500' : ''}
+                    />
+                    <select
+                      value={form.unit}
+                      onChange={e => setForm({ ...form, unit: e.target.value as any })}
+                      className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.unit ? 'border-red-500' : 'border-gray-300'}`}
+                    >
+                      <option value="day">Ngày</option>
+                      <option value="week">Tuần</option>
+                      <option value="month">Tháng</option>
+                      <option value="year">Năm</option>
+                    </select>
+                  </div>
+                  {(errors.duration || errors.unit) && (
+                    <p className="text-red-500 text-sm mt-1">{errors.duration || errors.unit}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Features */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tính năng
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={featureInput}
+                    onChange={e => setFeatureInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addFeature();
+                      }
+                    }}
+                    placeholder="Nhập tính năng"
+                    className="flex-1"
+                  />
+                  <Button type="button" onClick={addFeature} variant="outline">
+                    Thêm
+                  </Button>
+                </div>
+
+                {form.features && form.features.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {form.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full flex items-center gap-1 text-sm"
+                      >
+                        <span>{feature}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeFeature(feature)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={closeModal} disabled={loading}>
+                Hủy
+              </Button>
+              <Button onClick={handleCreate} disabled={loading}>
+                {loading ? 'Đang tạo...' : 'Tạo gói'}
+              </Button>
             </div>
           </div>
         </div>
-
-        <div className="mt-4">
-          <Button onClick={handleCreate} disabled={loading}>{loading ? 'Đang tạo...' : 'Tạo gói'}</Button>
-        </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 };
 
