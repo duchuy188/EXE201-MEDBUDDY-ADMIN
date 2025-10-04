@@ -277,7 +277,7 @@ const AdminDashboard = () => {
                   disabled={loading}
                   className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
                 >
-                  ✨ Áp dụng
+                  Áp dụng
                 </Button>
                 <Button 
                   variant="outline"
@@ -288,7 +288,7 @@ const AdminDashboard = () => {
                   disabled={loading}
                   className="border-blue-300 text-blue-700 hover:bg-blue-50"
                 >
-                  🔄 Xóa bộ lọc
+                  Xóa bộ lọc
                 </Button>
               </div>
             </div>

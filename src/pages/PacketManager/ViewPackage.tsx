@@ -48,10 +48,11 @@ const ViewPackage: React.FC<ViewPackageProps> = ({ packet }) => {
                 onClick={openModal}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 p-2 h-8 w-8"
+                title="Xem chi tiết gói"
             >
                 <Eye className="h-3 w-3" />
-        
+
             </Button>
 
             {isOpen && (

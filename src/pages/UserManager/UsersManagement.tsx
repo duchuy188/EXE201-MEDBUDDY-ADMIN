@@ -7,11 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { UserWithoutPassword } from '@/types/auth';
 import CreateUser from './CreateUser';
 import ViewUser from './ViewUser';
-import { TbLock, TbLockOpen2, TbEye } from 'react-icons/tb';
+import { TbLock, TbLockOpen2, TbEye, TbPlus } from 'react-icons/tb';
 import { FiFilter } from 'react-icons/fi';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
 import useLazyLoading from '@/hooks/useLazyLoading';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Lazy load CreateUser component
 const LazyCreateUser = lazy(() => import('./CreateUser'));
@@ -145,10 +148,14 @@ const QuanLyNguoiDung: React.FC = () => {
   }>({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null });
   const [showCreate, setShowCreate] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [viewUserPopup, setViewUserPopup] = useState<{
     isOpen: boolean;
     userId: string | null;
   }>({ isOpen: false, userId: null });
+
+  // Use debounce hook for search
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Function to reload table data only without flickering
   const reloadTableData = async (showLoading = false) => {
@@ -159,6 +166,7 @@ const QuanLyNguoiDung: React.FC = () => {
     try {
       const params: any = { page, limit };
       if (roleFilter && roleFilter !== 'all') params.role = roleFilter;
+      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
       const resp = await userServices.getAllUsers(params);
       const data = resp?.data ?? resp;
       const list = data?.data ?? data?.users ?? (Array.isArray(data) ? data : undefined) ?? [];
@@ -180,6 +188,7 @@ const QuanLyNguoiDung: React.FC = () => {
       try {
         const params: any = { page, limit };
         if (roleFilter && roleFilter !== 'all') params.role = roleFilter;
+        if (debouncedSearchTerm) params.search = debouncedSearchTerm;
         const resp = await userServices.getAllUsers(params);
         const data = resp?.data ?? resp;
         const list = data?.data ?? data?.users ?? (Array.isArray(data) ? data : undefined) ?? [];
@@ -198,7 +207,7 @@ const QuanLyNguoiDung: React.FC = () => {
     };
     load();
     return () => { mounted = false; };
-  }, [page, limit, roleFilter]);
+  }, [page, limit, roleFilter, debouncedSearchTerm]);
 
   const navigate = useNavigate();
 
@@ -261,177 +270,202 @@ const QuanLyNguoiDung: React.FC = () => {
 
   return (
     <>
-    <Card>
-      <CardHeader>
-        <CardTitle>Quản lý người dùng</CardTitle>
-        <CardDescription>Danh sách và quản lý tất cả người dùng trong hệ thống</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <label htmlFor="role-filter" className="sr-only">Bộ lọc loại người dùng</label>
-            <div className="relative flex items-center">
-              <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-              <select
-                id="role-filter"
-                value={roleFilter}
-                onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
-                className="pl-9 pr-4 py-2 border rounded shadow bg-white text-gray-800 focus:outline-none min-w-[140px]"
-              >
-                <option value="all">Tất cả</option>
-                <option value="patient">Người bệnh</option>
-                <option value="relative">Người thân</option>
-                <option value="admin">Quản trị viên</option>
-              </select>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Quản lý người dùng</CardTitle>
+              <CardDescription>Danh sách và quản lý tất cả người dùng trong hệ thống</CardDescription>
             </div>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              onClick={() => setShowCreate(true)}
+            >
+              <TbPlus className="w-5 h-5" />
+              Thêm người dùng
+            </Button>
           </div>
-          <Button onClick={() => setShowCreate(true)}>Thêm người dùng</Button>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <label htmlFor="role-filter" className="sr-only">Bộ lọc loại người dùng</label>
+              <div className="relative flex items-center">
+                <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                <select
+                  id="role-filter"
+                  value={roleFilter}
+                  onChange={e => { setRoleFilter(e.target.value); setPage(1); }}
+                  className="pl-9 pr-4 py-2 border rounded shadow bg-white text-gray-800 focus:outline-none min-w-[140px]"
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="patient">Người bệnh</option>
+                  <option value="relative">Người thân</option>
+                  <option value="admin">Quản trị viên</option>
+                </select>
+              </div>
+            </div>
 
-        {loading && <div>Đang tải...</div>}
-        {error && <div className="text-red-600">{error}</div>}
+            {/* Search Bar */}
+            <div className="relative flex items-center">
+              <Input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Tìm kiếm theo tên, email..."
+                className="w-80 pr-12 border-gray-300 rounded-lg"
+              />
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center" title="Tìm kiếm tự động khi bạn nhập">
+                <Search className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+          </div>          {loading && <div>Đang tải...</div>}
+          {error && <div className="text-red-600">{error}</div>}
 
-        {!loading && !error && (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tên</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Vai trò</TableHead>
-                  <TableHead>Ngày tạo</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Hành động</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u: any, idx) => (
-                  <TableRow key={u._id || u.id || idx}>
-                    <TableCell>{u.fullName || u.name || u.username || '—'}</TableCell>
-                    <TableCell>{u.email || '—'}</TableCell>
-                    <TableCell>{
-                      u.role === 'admin' ? 'Quản trị viên'
-                        : u.role === 'patient' ? 'Người bệnh'
-                          : u.role === 'relative' ? 'Người thân'
-                            : '—'
-                    }</TableCell>
-                    <TableCell>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : (u.dateCreated || '—')}</TableCell>
-                    <TableCell>
-                      {u.isBlocked || u.blocked ? (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Đã khoá</span>
-                      ) : (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Hoạt động</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          title="Xem chi tiết" 
-                          onClick={() => setViewUserPopup({ isOpen: true, userId: u._id || u.id })}
-                        >
-                          <TbEye className="w-4 h-4" />
-                        </Button>
-                        {u.isBlocked || u.blocked ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-600"
-                            title="Mở khoá"
-                            onClick={(e) => handleBlockUser(u._id || u.id, true, e)}
-                            disabled={actionLoading === (u._id || u.id)}
-                          >
-                            <TbLockOpen2 className="w-5 h-5" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600"
-                            title="Khoá"
-                            onClick={(e) => handleBlockUser(u._id || u.id, false, e)}
-                            disabled={actionLoading === (u._id || u.id)}
-                          >
-                            <TbLock className="w-5 h-5" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+          {!loading && !error && (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Vai trò</TableHead>
+                    <TableHead>Ngày tạo</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Hành động</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {users.length > 0 && (
-              <div className="flex items-center justify-end space-x-2 mt-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                >
-                  Prev
-                </Button>
-                {Array.from({ length: Math.max(1, totalPages) }).map((_, i) => (
+                </TableHeader>
+                <TableBody>
+                  {users.map((u: any, idx) => (
+                    <TableRow key={u._id || u.id || idx}>
+                      <TableCell>{u.fullName || u.name || u.username || '—'}</TableCell>
+                      <TableCell>{u.email || '—'}</TableCell>
+                      <TableCell>{
+                        u.role === 'admin' ? 'Quản trị viên'
+                          : u.role === 'patient' ? 'Người bệnh'
+                            : u.role === 'relative' ? 'Người thân'
+                              : '—'
+                      }</TableCell>
+                      <TableCell>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : (u.dateCreated || '—')}</TableCell>
+                      <TableCell>
+                        {u.isBlocked || u.blocked ? (
+                          <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Đã khoá</span>
+                        ) : (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Hoạt động</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Xem chi tiết"
+                            onClick={() => setViewUserPopup({ isOpen: true, userId: u._id || u.id })}
+                          >
+                            <TbEye className="w-4 h-4" />
+                          </Button>
+                          {u.isBlocked || u.blocked ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-green-600"
+                              title="Mở khoá"
+                              onClick={(e) => handleBlockUser(u._id || u.id, true, e)}
+                              disabled={actionLoading === (u._id || u.id)}
+                            >
+                              <TbLockOpen2 className="w-5 h-5" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600"
+                              title="Khoá"
+                              onClick={(e) => handleBlockUser(u._id || u.id, false, e)}
+                              disabled={actionLoading === (u._id || u.id)}
+                            >
+                              <TbLock className="w-5 h-5" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {users.length > 0 && (
+                <div className="flex items-center justify-end space-x-2 mt-4">
                   <Button
-                    key={i}
-                    variant={page === i + 1 ? 'default' : 'ghost'}
-                    onClick={() => setPage(i + 1)}
+                    variant="ghost"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
                   >
-                    {i + 1}
+                    Prev
                   </Button>
-                ))}
-                <Button
-                  variant="ghost"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-
-            {confirmDialog.isOpen && confirmDialog.targetElement && (
-              <Suspense fallback={<LoadingIndicator type="simple" message="Loading..." position="top-right" size="sm" />}>
-                <ConfirmDialogComponent
-                  message={confirmDialog.message}
-                  targetElement={confirmDialog.targetElement}
-                  onConfirm={confirmDialog.onConfirm}
-                  onCancel={() => setConfirmDialog({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null })}
-                />
-              </Suspense>
-            )}
-            {showCreate && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" />
-                <div className="relative bg-white rounded-2xl shadow-2xl p-6 min-w-[400px] max-w-[95vw] animate-fadeIn flex flex-col">
-                  {modalLoading && <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10"><span className="loader" /></div>}
-                  <Suspense fallback={<LoadingIndicator type="spinner" message="Đang tải..." position="center" size="md" />}>
-                    <LazyCreateUser onCreated={async () => {
-                      setModalLoading(true);
-                      setShowCreate(false);
-                      // Reload table data silently
-                      await reloadTableData(false);
-                      setModalLoading(false);
-                    }} />
-                  </Suspense>
+                  {Array.from({ length: Math.max(1, totalPages) }).map((_, i) => (
+                    <Button
+                      key={i}
+                      variant={page === i + 1 ? 'default' : 'ghost'}
+                      onClick={() => setPage(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </Button>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
 
-      </CardContent>
-    </Card>
+              {confirmDialog.isOpen && confirmDialog.targetElement && (
+                <Suspense fallback={<LoadingIndicator type="simple" message="Loading..." position="top-right" size="sm" />}>
+                  <ConfirmDialogComponent
+                    message={confirmDialog.message}
+                    targetElement={confirmDialog.targetElement}
+                    onConfirm={confirmDialog.onConfirm}
+                    onCancel={() => setConfirmDialog({ isOpen: false, message: '', onConfirm: () => { }, targetElement: null })}
+                  />
+                </Suspense>
+              )}
+              {showCreate && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" />
+                  <div className="relative bg-white rounded-2xl shadow-2xl p-6 min-w-[400px] max-w-[95vw] animate-fadeIn flex flex-col">
+                    {modalLoading && <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10"><span className="loader" /></div>}
+                    <Suspense fallback={<LoadingIndicator type="spinner" message="Đang tải..." position="center" size="md" />}>
+                      <LazyCreateUser onCreated={async () => {
+                        setModalLoading(true);
+                        setShowCreate(false);
+                        // Reload table data silently
+                        await reloadTableData(false);
+                        setModalLoading(false);
+                      }} />
+                    </Suspense>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
-    {/* ViewUser Popup */}
-    {viewUserPopup.isOpen && (
-      <ViewUser
-        isOpen={viewUserPopup.isOpen}
-        onClose={() => setViewUserPopup({ isOpen: false, userId: null })}
-        userId={viewUserPopup.userId}
-        onUpdated={() => reloadTableData(true)}
-      />
-    )}
+        </CardContent>
+      </Card>
+
+      {/* ViewUser Popup */}
+      {viewUserPopup.isOpen && (
+        <ViewUser
+          isOpen={viewUserPopup.isOpen}
+          onClose={() => setViewUserPopup({ isOpen: false, userId: null })}
+          userId={viewUserPopup.userId}
+          onUpdated={() => reloadTableData(true)}
+        />
+      )}
     </>
   );
 };

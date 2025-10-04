@@ -199,19 +199,6 @@ const PayosUser = () => {
           <h1 className="text-lg font-semibold text-gray-900">Thống kê thanh toán người dùng</h1>
           <p className="text-gray-600 text-xs">Quản lý các giao dịch thanh toán</p>
         </div>
-        <Button onClick={() => fetchPayments(currentPage)} disabled={loading} size="sm">
-          {loading ? (
-            <>
-              <Spinner size={10} />
-              <span className="ml-1 text-xs">Đang tải...</span>
-            </>
-          ) : (
-            <>
-              <Calendar className="w-3 h-3 mr-1" />
-              <span className="text-xs">Làm mới</span>
-            </>
-          )}
-        </Button>
       </div>
 
       {/* Statistics Cards - Minimal version */}
