@@ -42,15 +42,6 @@ const PacketManagement: React.FC = () => {
         {/* Tab Navigation */}
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-4">
           <button
-            onClick={() => setActiveTab('packages')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'packages'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-800'
-              }`}
-          >
-            Quản lý gói
-          </button>
-          <button
             onClick={() => setActiveTab('stats')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'stats'
               ? 'bg-white text-blue-600 shadow-sm'
@@ -58,6 +49,15 @@ const PacketManagement: React.FC = () => {
               }`}
           >
             Thống kê
+          </button>
+          <button
+            onClick={() => setActiveTab('packages')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'packages'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800'
+              }`}
+          >
+            Quản lý gói
           </button>
           <button
             onClick={() => setActiveTab('userDetails')}
@@ -70,14 +70,6 @@ const PacketManagement: React.FC = () => {
           </button>
         </div>
 
-        {/* Action Buttons - only show on packages tab */}
-        {activeTab === 'packages' && (
-          <div className="flex justify-between items-center">
-            <CreateTrialPackage onCreated={load} packagesCount={packets.length} />
-            <div className="flex-1" />
-            <CreatePacket onCreated={load} />
-          </div>
-        )}
       </div>
 
       {/* Content based on active tab */}
@@ -85,15 +77,22 @@ const PacketManagement: React.FC = () => {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Danh sách gói</CardTitle>
-              <CardDescription>Quản lý các gói dịch vụ</CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>Danh sách gói</CardTitle>
+                  <CardDescription>Quản lý các gói dịch vụ</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <CreateTrialPackage onCreated={load} packagesCount={packets.length} />
+                  <CreatePacket onCreated={load} />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-20">ID</TableHead>
                       <TableHead className="min-w-32">Tên</TableHead>
                       <TableHead className="w-24">Giá</TableHead>
                       <TableHead className="w-28">Thời lượng</TableHead>
@@ -106,9 +105,6 @@ const PacketManagement: React.FC = () => {
                   <TableBody>
                     {packets.map(p => (
                       <TableRow key={p._id}>
-                        <TableCell className="font-mono text-xs">
-                          {p._id.slice(-8)}
-                        </TableCell>
                         <TableCell className="font-medium">{p.name}</TableCell>
                         <TableCell className="text-right">{p.price?.toLocaleString()}</TableCell>
                         <TableCell>{`${p.duration} ${p.unit}`}</TableCell>

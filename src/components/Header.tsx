@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, TrendingUp, User } from 'lucide-react';
+import { Bell, TrendingUp, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -29,8 +29,14 @@ const Header: React.FC = () => {
           <User className="h-4 w-4 mr-2" />
           {auth.user?.name ? auth.user.name.split(' ')[0] : 'Profile'}
         </Button>
-        <Button variant="ghost" size="sm" onClick={async () => { await auth.logout(); navigate('/login'); }}>
-          Đăng xuất
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => { await auth.logout(); navigate('/login'); }}
+          className="flex items-center space-x-2 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Đăng xuất</span>
         </Button>
       </div>
     </div>

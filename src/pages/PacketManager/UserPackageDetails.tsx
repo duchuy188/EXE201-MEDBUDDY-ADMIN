@@ -7,7 +7,8 @@ import { userServices } from '@/services/usersService';
 import { packetServices } from '@/services/packetService';
 import { User } from '@/types/auth';
 import PackageDetailModal from './PackageDetail';
-import { Eye } from 'lucide-react';
+import { Eye, Search } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Interface for users response from /admin/users
 interface UsersResponse {
@@ -43,6 +44,9 @@ const UserPackageDetails: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const limit = 10;
 
+  // Use debounce hook for search
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
   const fetchAllUsers = async () => {
     setLoading(true);
     setError(null);
@@ -50,7 +54,7 @@ const UserPackageDetails: React.FC = () => {
       const response = await userServices.getAllUsers({
         page: currentPage,
         limit: limit,
-        search: searchTerm
+        search: debouncedSearchTerm
       });
 
       console.log('API Response:', response.data); // Debug log
@@ -120,7 +124,7 @@ const UserPackageDetails: React.FC = () => {
 
   useEffect(() => {
     fetchAllUsers();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, debouncedSearchTerm]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -161,20 +165,19 @@ const UserPackageDetails: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex-1"></div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm kiếm theo tên, email..."
-                  className="w-64"
-                />
-                <Button onClick={handleSearch} disabled={loading}>
-                  {loading ? 'Đang tải...' : 'Tìm kiếm'}
-                </Button>
-                <Button onClick={fetchAllUsers} disabled={loading} variant="outline">
-                  Làm mới
-                </Button>
+              <div className="flex gap-3 items-center">
+                <div className="relative flex items-center">
+                  <Input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Tìm kiếm theo tên, email..."
+                    className="w-80 pr-12 border-gray-300 rounded-lg"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center" title="Tìm kiếm tự động khi bạn nhập">
+                    <Search className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -230,7 +233,7 @@ const UserPackageDetails: React.FC = () => {
                               className="flex items-center gap-1"
                             >
                               <Eye className="h-4 w-4" />
-                   
+
                             </Button>
                           </TableCell>
                         </TableRow>
