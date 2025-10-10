@@ -1,73 +1,80 @@
-# Welcome to your Lovable project
+# HAP MEDBUDDY - Admin Dashboard
 
-## Project info
+## Thông tin dự án
 
-**URL**: https://lovable.dev/projects/72917595-e71c-49a4-a5ab-e7854e2d7595
+HAP MEDBUDDY là ứng dụng hỗ trợ người bệnh cao huyết áp, đặc biệt người cao tuổi, trong việc nhắc nhở uống thuốc, theo dõi huyết áp và kết nối với người thân.
 
-## How can I edit this code?
+## Cách chạy dự án
 
-There are several ways of editing your application.
+### Yêu cầu hệ thống
+- Node.js & npm - [Cài đặt với nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/ab34c548-d192-44aa-8d7c-8fddbdbe2db8) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Các bước chạy
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Bước 1: Clone repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Bước 2: Di chuyển vào thư mục dự án
+cd EXE201-MEDBUDDY-ADMIN
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Bước 3: Cài đặt dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Bước 4: Chạy development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Các script có sẵn
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `npm run dev` - Chạy development server
+- `npm run build` - Build dự án cho production
+- `npm run preview` - Preview build production
+- `npm run lint` - Chạy ESLint
 
-**Use GitHub Codespaces**
+## Công nghệ sử dụng
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Dự án được xây dựng với:
 
-## What technologies are used for this project?
+- **Vite** - Build tool và development server
+- **TypeScript** - Type-safe JavaScript
+- **React** - UI library
+- **shadcn-ui** - Component library
+- **Tailwind CSS** - CSS framework
+- **React Router** - Client-side routing
+- **React Query** - Data fetching và caching
+- **Axios** - HTTP client
 
-This project is built with:
+## Cấu trúc dự án
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+src/
+├── components/          # Reusable components
+├── pages/              # Page components
+├── services/           # API services
+├── contexts/           # React contexts
+├── hooks/              # Custom hooks
+├── types/              # TypeScript type definitions
+├── utils/              # Utility functions
+└── styles/             # CSS styles
+```
 
-## How can I deploy this project?
+## Tính năng chính
 
-Simply open [Lovable](https://lovable.dev/projects/ab34c548-d192-44aa-8d7c-8fddbdbe2db8) and click on Share -> Publish.
+- **Quản lý người dùng**: Xem, tạo, sửa, xóa người dùng
+- **Quản lý gói dịch vụ**: Tạo và quản lý các gói dịch vụ
+- **Theo dõi thanh toán**: Xem chi tiết thanh toán PayOS
+- **Dashboard**: Thống kê và báo cáo tổng quan
+- **Xác thực**: Hệ thống đăng nhập và phân quyền
 
-## Can I connect a custom domain to my Lovable project?
+## Deployment
 
-Yes, you can!
+Để deploy dự án:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Build dự án: `npm run build`
+2. Upload thư mục `dist` lên hosting service
+3. Cấu hình server để serve static files
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Liên hệ
+
+Được phát triển bởi HAP MEDBUDDY Team.
